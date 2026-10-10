@@ -1,6 +1,7 @@
 import { canStand } from './collision';
-export const PLAYER_SPEED = 4, TURN_SPEED = 12, MAX_FRAME_SECONDS = .05;
+export const PLAYER_SPEED = 6, TURN_SPEED = 12, MAX_FRAME_SECONDS = .05;
 export interface PlayerState { x: number; z: number; yaw: number }
+/** lookX/lookY are angular deltas in radians, converted once by the input layer. */
 export interface Controls { x: number; forward: number; lookX: number; lookY: number }
 export const frameSeconds = (s: number) => Number.isFinite(s) ? Math.max(0, Math.min(MAX_FRAME_SECONDS, s)) : 0;
 export function movementDirection(x: number, forward: number, yaw: number, result = { x: 0, z: 0 }) {

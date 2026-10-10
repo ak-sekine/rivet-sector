@@ -18,17 +18,23 @@ describe('movement and collision', () => {
     expect(movementDirection(0, .5, 0).z).toBe(.5);
   });
   it('moves equally at 30 and 60 FPS', () => {
+    expect(PLAYER_SPEED).toBe(6);
     for (const fps of [30, 60]) {
       const p = { x: 0, z: -5, yaw: 0 };
       for (let i = 0; i < fps; i++) movePlayer(p, input, 0, 1 / fps);
-      expect(p.z).toBeCloseTo(-5 + PLAYER_SPEED);
+      expect(p.z).toBeCloseTo(1);
     }
   });
   it('caps frame time and stops with released input', () => {
     expect(frameSeconds(10)).toBe(.05); expect(frameSeconds(NaN)).toBe(0);
     const p = { x: 0, z: -5, yaw: 0 };
     movePlayer(p, { ...input, forward: 0 }, 0, 1); expect(p.z).toBe(-5);
-    movePlayer(p, input, 0, 10); expect(p.z).toBeCloseTo(-4.8);
+    movePlayer(p, input, 0, 10); expect(p.z).toBeCloseTo(-4.7);
+  });
+  it('moves diagonally at six units per second', () => {
+    const p = { x: 0, z: -8, yaw: 0 };
+    for (let i = 0; i < 60; i++) movePlayer(p, { ...input, x: -1 }, 0, 1 / 60);
+    expect(Math.hypot(p.x, p.z + 8)).toBeCloseTo(6);
   });
   it('rejects interiors, radius overlaps and boundaries', () => {
     expect(canStand(-4, 2)).toBe(false); expect(canStand(-2.2, 2)).toBe(false);

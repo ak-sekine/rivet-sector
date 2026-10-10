@@ -13,7 +13,8 @@ export function createTpsCamera(scene: Scene) {
   const ray = new Ray(Vector3.Zero(), direction, 6);
   const offsets = [-CAMERA.clearance, 0, CAMERA.clearance];
   return { camera, get yaw() { return yaw; },
-    look(x: number, y: number) { yaw += x * CAMERA.sensitivity; pitch = clampPitch(pitch + y * CAMERA.sensitivity); },
+    // Input is already expressed in radians.
+    look(x: number, y: number) { yaw += x; pitch = clampPitch(pitch + y); },
     update(p: PlayerState, seconds: number) {
       target.set(p.x, CAMERA.height, p.z);
       desired.set(p.x - Math.sin(yaw) * Math.cos(pitch) * CAMERA.distance + Math.cos(yaw) * CAMERA.shoulder,

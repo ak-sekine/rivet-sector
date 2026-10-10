@@ -2,6 +2,7 @@
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const baseUrl = process.env.TEST_BASE_URL || 'http://localhost:4173/rivet-sector/';
 (async () => {
   fs.mkdirSync('.cache', { recursive: true });
   const browser = await chromium.launch({ channel: 'msedge', headless: true,
@@ -10,7 +11,7 @@ const fs = require('node:fs');
     const errors = [];
     const setup = async (page) => {
       page.on('pageerror', e => errors.push(e.message));
-      await page.goto('http://localhost:4173/rivet-sector/');
+      await page.goto(baseUrl);
       await page.waitForFunction(() => document.querySelector('#status').textContent === 'TPS PROTOTYPE');
       const pwa = await page.evaluate(async () => {
         const link = document.querySelector('link[rel="manifest"]');
@@ -59,8 +60,8 @@ const fs = require('node:fs');
     await page.evaluate(() => document.querySelector('#scene').requestPointerLock = undefined);
     const yaw = (await state(page)).yaw;
     await page.mouse.move(600, 400); await page.mouse.down(); await page.mouse.move(680, 400); await page.mouse.up();
-    await page.waitForTimeout(150); assert.notEqual((await state(page)).yaw, yaw);
-    await page.evaluate(() => window.testScene.metadata.camera.look(-window.testScene.metadata.camera.yaw / .003, 0));
+    await page.waitForTimeout(150); assert(Math.abs((await state(page)).yaw - yaw - 80 * .004) < 1e-6);
+    await page.evaluate(() => window.testScene.metadata.camera.look(-window.testScene.metadata.camera.yaw, 0));
     await place(page, -4, -.01);
     await page.keyboard.down('w'); await page.waitForTimeout(500); await page.keyboard.up('w');
     assert((await state(page)).player.z < .03);
@@ -82,7 +83,7 @@ const fs = require('node:fs');
     await touch('touchMove', [{ x: sx, y: sy - 40, id: 1 }, { x: 340, y: 430, id: 2 }]);
     await mobile.waitForTimeout(500);
     const m1 = await state(mobile);
-    assert(m1.player.z > m0.player.z + .3); assert.notEqual(m1.yaw, m0.yaw);
+    assert(m1.player.z > m0.player.z + .3); assert(Math.abs(m1.yaw - m0.yaw - 40 * .010) < 1e-6);
     await touch('touchEnd', []); await mobile.waitForTimeout(100);
     const m2 = await state(mobile); await mobile.waitForTimeout(150);
     assert.equal((await state(mobile)).player.z, m2.player.z);
@@ -98,7 +99,7 @@ const fs = require('node:fs');
     // Force initialization failure and check the maintained error UI.
     const failure = await browser.newPage();
     await failure.addInitScript(() => HTMLCanvasElement.prototype.getContext = () => null);
-    await failure.goto('http://localhost:4173/rivet-sector/');
+    await failure.goto(baseUrl);
     await failure.waitForSelector('#error:not([hidden])');
     console.log('PASS: robot/TPS, WASD/stop/blur, pointer lock/Esc/drag, walls/obstacles, touch simultaneous movement/look/release, portrait/landscape/resize, WebGL error UI');
   } finally { await browser.close(); }

@@ -1,4 +1,5 @@
 import type { Controls } from './game/movement';
+import { MOUSE_SENSITIVITY, TOUCH_SENSITIVITY } from './game/view';
 export function createInput(canvas: HTMLCanvasElement, stick: HTMLElement) {
   const state: Controls = { x: 0, forward: 0, lookX: 0, lookY: 0 };
   const keys = new Set<string>();
@@ -47,9 +48,13 @@ export function createInput(canvas: HTMLCanvasElement, stick: HTMLElement) {
     }
   }, options);
   canvas.addEventListener('pointermove', e => {
-    if (document.pointerLockElement === canvas) { state.lookX += e.movementX; state.lookY += e.movementY; }
+    // Convert pixel deltas to radians here; the camera consumes angles directly.
+    const sensitivity = e.pointerType === 'touch' ? TOUCH_SENSITIVITY : MOUSE_SENSITIVITY;
+    if (document.pointerLockElement === canvas && e.pointerType === 'mouse') {
+      state.lookX += e.movementX * MOUSE_SENSITIVITY; state.lookY += e.movementY * MOUSE_SENSITIVITY;
+    }
     else if (e.pointerId === lookId) {
-      state.lookX += e.clientX - lastX; state.lookY += e.clientY - lastY;
+      state.lookX += (e.clientX - lastX) * sensitivity; state.lookY += (e.clientY - lastY) * sensitivity;
       lastX = e.clientX; lastY = e.clientY;
     }
   }, options);
