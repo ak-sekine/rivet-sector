@@ -12,6 +12,22 @@ const fs = require('node:fs');
       page.on('pageerror', e => errors.push(e.message));
       await page.goto('http://localhost:4173/rivet-sector/');
       await page.waitForFunction(() => document.querySelector('#status').textContent === 'TPS PROTOTYPE');
+      const pwa = await page.evaluate(async () => {
+        const link = document.querySelector('link[rel="manifest"]');
+        const response = await fetch(link.href);
+        const manifest = await response.json();
+        const icons = await Promise.all([...manifest.icons.map(icon => new URL(icon.src, link.href).href),
+          document.querySelector('link[rel="apple-touch-icon"]').href].map(async url => {
+          const response = await fetch(url);
+          const bitmap = await createImageBitmap(await response.blob());
+          return { ok: response.ok, width: bitmap.width, height: bitmap.height };
+        }));
+        return { ok: response.ok, manifest, icons, standalone: matchMedia('(display-mode: standalone)').matches };
+      });
+      assert(pwa.ok); assert.equal(pwa.manifest.display, 'standalone');
+      assert.equal(pwa.manifest.start_url, '/rivet-sector/');
+      assert.equal(pwa.standalone, false); // Ordinary browser launch, not a real installed app.
+      assert.deepEqual(pwa.icons, [192, 512, 180].map(size => ({ ok: true, width: size, height: size })));
       await page.evaluate(async () => {
         const source = await (await fetch('/rivet-sector/src/rendering/engine.ts')).text();
         const url = source.match(/from "([^"]+Engines_engine[^\"]+)"/)[1];
@@ -56,6 +72,7 @@ const fs = require('node:fs');
     assert.equal((await state(page)).player.z, blurred.player.z); await page.keyboard.up('s');
     const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
     await setup(mobile); assert(await mobile.locator('#stick').isVisible());
+    assert(await mobile.locator('.portrait-hint').isVisible());
     const box = await mobile.locator('#stick').boundingBox();
     const sx = box.x + box.width / 2, sy = box.y + box.height / 2;
     const cdp = await mobile.context().newCDPSession(mobile);
@@ -72,6 +89,8 @@ const fs = require('node:fs');
     await mobile.screenshot({ path: '.cache/tps-mobile-portrait.png' });
     await mobile.setViewportSize({ width: 844, height: 390 }); await mobile.waitForTimeout(150);
     const landscape = await mobile.locator('#stick').boundingBox();
+    assert.equal(await mobile.locator('.portrait-hint').isVisible(), false);
+    assert.deepEqual(await mobile.locator('#scene').evaluate(canvas => [canvas.clientWidth, canvas.clientHeight]), [844, 390]);
     assert(landscape.x >= 0 && landscape.y >= 0 && landscape.y + landscape.height <= 390);
     await mobile.screenshot({ path: '.cache/tps-mobile-landscape.png' });
     assert.equal(await mobile.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight), true);

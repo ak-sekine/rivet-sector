@@ -60,9 +60,52 @@ WASD、停止・フォーカス喪失、Pointer Lock／Esc／ドラッグ代替�
 
 ## GitHub Pages
 
-公開予定: https://ak-sekine.github.io/rivet-sector/
+公開URL: https://ak-sekine.github.io/rivet-sector/
 
 GitHubの **Settings → Pages → Build and deployment → Source** を **GitHub Actions** に設定してください。
 mainへのpushで依存パッケージのインストール、テスト、ビルド、Pagesデプロイを実行します。
 Viteのbaseは `/rivet-sector/` に設定しています。実行結果はActionsタブとPages設定で確認してください。
 リポジトリまたは組織でActions／Pagesが制限されている場合は管理者側の許可が必要です。
+
+## ホーム画面から起動（PWA）
+
+iPhone:
+
+1. Safariで https://ak-sekine.github.io/rivet-sector/ を開く。
+2. 共有メニューから「ホーム画面に追加」を選ぶ。
+3. 「Webアプリとして開く」が表示される場合は有効にして追加する。
+4. ホーム画面のRivet Sectorアイコンから起動する。
+5. 端末の画面縦向きロックを解除し、横向きでプレイする。
+
+既存のショートカットが通常のSafariで開く場合は、ホーム画面のショートカットを削除し、
+Safariで公開URLを開いて上記の手順で追加し直してください。
+[Appleの現行手順](https://support.apple.com/ja-jp/guide/iphone/iphea86e5236/ios)と
+[WebKitのホーム画面Webアプリ仕様](https://webkit.org/blog/17333/webkit-features-in-safari-26-0/)を参照。
+
+Android:
+
+1. Chromeで公開URLを開く。
+2. メニューから「ホーム画面に追加」または「アプリをインストール」を選び、表示された案内に従う。
+3. ホーム画面から起動し、横向きでプレイする。項目名やインストール方法はChrome・端末の仕様によって異なります。
+
+Manifestは`display: standalone`、`orientation: landscape`、start_url／scopeは`/rivet-sector/`、
+背景色／テーマ色は`#101923`です。Viteのbaseを維持し、開発時も`/rivet-sector/`で読み込みます。
+iPhone用capable／title／status-bar-styleと180px Apple Touch Icon、192px／512pxのPNGを設定しています。
+ステータスバーは`black-translucent`を希望設定とし、ノッチとホームインジケーターにはSafe Areaで余白を確保します。
+アイコンは外部素材を使わず、`node scripts/generate-icons.ts`（Node 24推奨）でSVGとPNGを生成します。
+暗い背景に青緑のRを幾何学図形で描き、Node標準機能でPNGをエンコードします。
+
+iPhoneでは画面方向を強制できない場合があります。Manifestの方向指定は希望設定です。
+ブラウザ・OS・追加方法によって表示が異なり、ステータスバーやホームインジケーターの完全非表示は保証しません。
+スタンドアロン起動、Safariのタブ／アドレスバーの非表示、WebGL、Safe Area、横回転、2本指操作は実機確認が必要です。
+Service Worker、オフライン機能、独自のキャッシュ制御は導入していません。起動にはネット接続が必要です。
+
+開発者はリモートWeb Inspectorなどのコンソールで次を確認できます（画面上にデバッグ表示は出しません）。
+通常ブラウザではfalse、対応環境のホーム画面起動ではtrueになることを確認します。
+
+```js
+window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true
+```
+
+`npm test`はManifest、アイコンのPNG形式・寸法・展開、Vite本番出力と参照パスも検証します。
+ブラウザ検証はPC／スマートフォン相当の表示・操作確認であり、iPhone Safari実機の起動成功とは別です。
