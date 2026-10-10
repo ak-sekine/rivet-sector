@@ -10,3 +10,14 @@ p { margin: 6px 0 0; font-size: 12px; line-height: 1.5; }
 #error { position: absolute; inset: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); margin: auto; height: fit-content; max-height: 100%; overflow: auto; padding: 20px; background: #351c25; border: 1px solid #ff8a96; white-space: pre-wrap; overflow-wrap: anywhere; }
 .portrait-hint { display: none; }
 @media (orientation: portrait) { .portrait-hint { display: block; } }
+html { touch-action: none; overscroll-behavior: none; }
+#stick { --stick-size: 132px; --stick-x: 0px; --stick-y: 0px; display: none; position: absolute; width: var(--stick-size); height: var(--stick-size); bottom: max(32px, env(safe-area-inset-bottom)); left: max(24px, env(safe-area-inset-left)); border: 2px solid #5ed8cd80; border-radius: 50%; background: #10192366; touch-action: none; user-select: none; }
+#stick span { position: absolute; width: 44px; height: 44px; left: calc(50% - 22px); top: calc(50% - 22px); border-radius: 50%; background: #5ed8cd99; transform: translate(var(--stick-x), var(--stick-y)); pointer-events: none; }
+.touch-help { display: none; }
+#status { text-align: right; font-size: 10px; }
+@media (any-pointer: coarse) { #stick, .touch-help { display: block; } .pc-help { display: none; } }
+html[data-input="touch"] #stick, html[data-input="touch"] .touch-help { display: block; }
+html[data-input="touch"] .pc-help { display: none; }
+html[data-input="mouse"] #stick, html[data-input="mouse"] .touch-help { display: none; }
+html[data-input="mouse"] .pc-help { display: block; }
+@media (max-height: 450px) { .panel { padding: 6px 10px; } .portrait-hint { display: none; } #stick { --stick-size: 112px; bottom: max(20px, env(safe-area-inset-bottom)); } }

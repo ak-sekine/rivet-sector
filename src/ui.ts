@@ -6,5 +6,5 @@ export function showError(error: unknown): void {
 }
 
 export function showReady(): void {
-  document.querySelector<HTMLElement>('#status')!.textContent = 'WebGL / Scene Preview — ゲーム操作は未実装';
+  document.querySelector<HTMLElement>('#status')!.textContent = 'TPS PROTOTYPE';
 }
