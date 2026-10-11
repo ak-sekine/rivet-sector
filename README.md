@@ -5,6 +5,11 @@ PC・スマートフォン向けボクセル風SF TPS「Rivet Sector」。Codex�
 現在はTPS基本操作の試作環境です。移動、視点操作、衝突判定を実装しています。
 8方向ステップ回避、中央照準、エネルギー銃のHitscan射撃と静止ロボット標的を実装しています。敵AIは未実装です。
 
+見下ろし型の[2Dシューティング試作](https://ak-sekine.github.io/rivet-sector/2d/)を別ページに追加しています。
+Phaser 4.2.1でPCのWASD／マウス、スマートフォンのツインスティック／回避を比較できます。
+画像8ファイルと効果音4種類・12秒BGMは、外部素材を使わずTypeScriptスクリプトで生成しています。
+目的・操作・生成方法・検証結果は[2D試作仕様](docs/2d-prototype.md)を参照してください。
+
 ## 使用技術と開発環境
 
 - TypeScript / Vite / Babylon.js（npm管理、WebGL）/ HTML / CSS
@@ -29,6 +34,11 @@ npm test
 npm run build
 npm run preview
 ```
+
+2D版は `/rivet-sector/2d/` を開きます。素材の再生成は `npm run generate:2d`。
+本番ブラウザ検証は `npm run preview -- --port 4174` 起動後に
+`TEST_BASE_URL=http://localhost:4174/rivet-sector/2d/ npm run check:2d`（PowerShellでは環境変数を `$env:TEST_BASE_URL` に設定）。
+PlaywrightとEdgeが必要です。外部のPlaywrightを使用する場合は `PLAYWRIGHT_MODULE` を設定します。
 
 テストは移動方向、斜め正規化、30/60FPS、停止、衝突と壁沿い移動、角度制限、カメラ障害物回避、描画解像度、NullEngineシーン構成を確認します。buildはTypeScript検証後にdistへ出力します。
 previewは本番ビルドの確認用です。

@@ -1,0 +1,91 @@
+{
+  "generator": "generate-2d-assets.ts",
+  "seed": "73019 / 42817",
+  "images": [
+    {
+      "file": "player.png",
+      "width": 128,
+      "height": 128,
+      "frames": 16
+    },
+    {
+      "file": "enemy.png",
+      "width": 64,
+      "height": 32,
+      "frames": 2
+    },
+    {
+      "file": "floor.png",
+      "width": 32,
+      "height": 32,
+      "frames": 1
+    },
+    {
+      "file": "wall.png",
+      "width": 32,
+      "height": 32,
+      "frames": 1
+    },
+    {
+      "file": "obstacle.png",
+      "width": 32,
+      "height": 32,
+      "frames": 1
+    },
+    {
+      "file": "energy.png",
+      "width": 16,
+      "height": 8,
+      "frames": 1
+    },
+    {
+      "file": "impact.png",
+      "width": 192,
+      "height": 32,
+      "frames": 6
+    },
+    {
+      "file": "afterimage.png",
+      "width": 128,
+      "height": 32,
+      "frames": 4
+    }
+  ],
+  "audio": [
+    {
+      "file": "shot.wav",
+      "seconds": 0.12,
+      "sampleRate": 22050,
+      "channels": 1,
+      "bits": 16
+    },
+    {
+      "file": "hit.wav",
+      "seconds": 0.16,
+      "sampleRate": 22050,
+      "channels": 1,
+      "bits": 16
+    },
+    {
+      "file": "explosion.wav",
+      "seconds": 0.24,
+      "sampleRate": 22050,
+      "channels": 1,
+      "bits": 16
+    },
+    {
+      "file": "dodge.wav",
+      "seconds": 0.18,
+      "sampleRate": 22050,
+      "channels": 1,
+      "bits": 16
+    },
+    {
+      "file": "bgm.wav",
+      "seconds": 12,
+      "sampleRate": 22050,
+      "channels": 1,
+      "bits": 16
+    }
+  ]
+}

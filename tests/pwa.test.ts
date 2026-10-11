@@ -42,5 +42,12 @@ describe('PWA assets and production paths', () => {
     for (const path of ['manifest.webmanifest', 'icons/apple-touch-icon.png', ...manifest.icons.map((icon: { src: string }) => icon.src)]) {
       expect(read(`.cache/pwa-build/${path}`)).toEqual(read(`public/${path}`));
     }
+    const lab = read('.cache/pwa-build/2d/index.html').toString();
+    expect(lab).toContain('2D Training Lab');
+    expect(lab).toMatch(/src="\/rivet-sector\/assets\//);
+    expect(lab).toContain('href="/rivet-sector/manifest.webmanifest"');
+    for (const path of ['player.png', 'enemy.png', 'floor.png', 'wall.png', 'obstacle.png', 'energy.png', 'impact.png', 'afterimage.png', 'shot.wav', 'hit.wav', 'explosion.wav', 'dodge.wav', 'bgm.wav', 'catalog.json']) {
+      expect(read(`.cache/pwa-build/2d/assets/${path}`)).toEqual(read(`public/2d/assets/${path}`));
+    }
   }, 60000);
 });
