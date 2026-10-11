@@ -44,6 +44,7 @@ const baseUrl = process.env.TEST_BASE_URL || 'http://localhost:4173/rivet-sector
     assert(await page.evaluate(() => window.testScene.getMeshByName('player-head').isEnabled()));
     assert.equal(await page.evaluate(() => window.testScene.activeCamera.name), 'tps');
     assert.equal(await page.locator('#stick').isVisible(), false);
+    assert.equal(await page.locator('#dodge').isVisible(), false);
     await page.screenshot({ path: '.cache/tps-pc.png' });
     const before = await state(page);
     await page.keyboard.down('w'); await page.waitForTimeout(500); await page.keyboard.up('w');
@@ -71,6 +72,17 @@ const baseUrl = process.env.TEST_BASE_URL || 'http://localhost:4173/rivet-sector
     await page.keyboard.down('s'); await page.evaluate(() => window.dispatchEvent(new Event('blur')));
     const blurred = await state(page); await page.waitForTimeout(150);
     assert.equal((await state(page)).player.z, blurred.player.z); await page.keyboard.up('s');
+    await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+    await place(page, 0, -6);
+    await page.keyboard.down('Shift'); await page.waitForTimeout(900);
+    assert(Math.abs((await state(page)).player.z + 8.5) < .01);
+    await page.keyboard.up('Shift');
+    await page.keyboard.down('w'); await page.keyboard.down('Shift');
+    await page.waitForFunction(() => window.testScene.metadata.dodge.active);
+    assert.equal(await page.evaluate(() => window.testScene.getTransformNodeByName('torso-joint').rotation.x), .16);
+    await page.keyboard.up('w'); await page.waitForTimeout(350); await page.keyboard.up('Shift');
+    assert((await state(page)).player.z > -6.05);
+    assert.equal(await page.evaluate(() => window.testScene.getTransformNodeByName('torso-joint').rotation.x), 0);
     const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
     await setup(mobile); assert(await mobile.locator('#stick').isVisible());
     assert(await mobile.locator('.portrait-hint').isVisible());
@@ -87,12 +99,34 @@ const baseUrl = process.env.TEST_BASE_URL || 'http://localhost:4173/rivet-sector
     await touch('touchEnd', []); await mobile.waitForTimeout(100);
     const m2 = await state(mobile); await mobile.waitForTimeout(150);
     assert.equal((await state(mobile)).player.z, m2.player.z);
+    const dodgeBox = await mobile.locator('#dodge').boundingBox();
+    assert(dodgeBox.width >= 44 && dodgeBox.height >= 44);
+    assert(dodgeBox.x + dodgeBox.width <= 390 && dodgeBox.y + dodgeBox.height <= 844);
+    await place(mobile, 0, -6);
+    await mobile.evaluate(() => window.testScene.metadata.camera.look(-window.testScene.metadata.camera.yaw, 0));
+    const db = { x: dodgeBox.x + dodgeBox.width / 2, y: dodgeBox.y + dodgeBox.height / 2, id: 3 };
+    await touch('touchStart', [{ x:sx,y:sy-40,id:1 }, { x:280,y:400,id:2 }]);
+    await touch('touchStart', [{ x:sx,y:sy-40,id:1 }, { x:280,y:400,id:2 }, db]);
+    await mobile.waitForFunction(() => window.testScene.metadata.dodge.active);
+    assert(await mobile.locator('#dodge').evaluate(b => b.classList.contains('cooldown') && b.classList.contains('pressed')));
+    const dodgeYaw = (await state(mobile)).yaw;
+    await touch('touchMove', [{ x:sx,y:sy,id:1 }, { x:300,y:410,id:2 }, db]);
+    await mobile.waitForTimeout(900);
+    const dodgeEnd = await state(mobile);
+    assert(Math.abs(dodgeEnd.yaw - dodgeYaw - .2) < 1e-6);
+    // The stick also moves normally while CDP adds the third finger; exact distance is unit-tested.
+    assert(Math.abs(dodgeEnd.player.x) < .01); assert(dodgeEnd.player.z > -3.6 && dodgeEnd.player.z < -2.5, JSON.stringify(dodgeEnd));
+    await mobile.waitForTimeout(200); assert.equal((await state(mobile)).player.z, dodgeEnd.player.z);
+    await touch('touchCancel', []);
+    assert.equal(await mobile.locator('#dodge').evaluate(b => b.classList.contains('pressed')), false);
     await mobile.screenshot({ path: '.cache/tps-mobile-portrait.png' });
     await mobile.setViewportSize({ width: 844, height: 390 }); await mobile.waitForTimeout(150);
     const landscape = await mobile.locator('#stick').boundingBox();
     assert.equal(await mobile.locator('.portrait-hint').isVisible(), false);
     assert.deepEqual(await mobile.locator('#scene').evaluate(canvas => [canvas.clientWidth, canvas.clientHeight]), [844, 390]);
     assert(landscape.x >= 0 && landscape.y >= 0 && landscape.y + landscape.height <= 390);
+    const landscapeDodge = await mobile.locator('#dodge').boundingBox();
+    assert(landscapeDodge.x + landscapeDodge.width <= 844 && landscapeDodge.y + landscapeDodge.height <= 390);
     await mobile.screenshot({ path: '.cache/tps-mobile-landscape.png' });
     assert.equal(await mobile.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight), true);
     assert.deepEqual(errors, []);
@@ -101,6 +135,6 @@ const baseUrl = process.env.TEST_BASE_URL || 'http://localhost:4173/rivet-sector
     await failure.addInitScript(() => HTMLCanvasElement.prototype.getContext = () => null);
     await failure.goto(baseUrl);
     await failure.waitForSelector('#error:not([hidden])');
-    console.log('PASS: robot/TPS, WASD/stop/blur, pointer lock/Esc/drag, walls/obstacles, touch simultaneous movement/look/release, portrait/landscape/resize, WebGL error UI');
+    console.log('PASS: robot/TPS/PWA/WebGL, WASD/Shift, dodge hold/cooldown/torso, pointer lock/Esc/drag, collision, three touch pointers, portrait/landscape control bounds');
   } finally { await browser.close(); }
 })().catch(e => { console.error(e); process.exitCode = 1; });

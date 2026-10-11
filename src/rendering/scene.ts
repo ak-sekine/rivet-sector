@@ -9,7 +9,8 @@ import { Vector3 } from '@babylonjs/core/Maths/math.vector';
 import { createTpsCamera } from './camera';
 import { createPlayer } from './player';
 import { stage } from '../stage';
-import { movePlayer, type Controls } from '../game/movement';
+import { type Controls } from '../game/movement';
+import { createDodge } from '../game/dodge';
 
 export function createScene(engine: Engine, canvas: HTMLCanvasElement): Scene {
   const scene = new Scene(engine);
@@ -17,9 +18,12 @@ export function createScene(engine: Engine, canvas: HTMLCanvasElement): Scene {
   const player = createPlayer(scene);
   const state = { x: 0, z: -5, yaw: 0 };
   const camera = createTpsCamera(scene);
-  scene.metadata = { player: state, camera, update(input: Controls, seconds: number) {
+  const dodge = createDodge();
+  const torso = scene.getTransformNodeByName('torso-joint')!;
+  scene.metadata = { player: state, camera, dodge, reset() { dodge.reset(); torso.rotation.x = 0; }, update(input: Controls, seconds: number) {
     camera.look(input.lookX, input.lookY);
-    movePlayer(state, input, camera.yaw, seconds);
+    dodge.update(state, input, camera.yaw, seconds);
+    torso.rotation.x = dodge.active ? .16 : 0;
     player.position.set(state.x, 0, state.z); player.rotation.y = state.yaw;
     camera.update(state, seconds);
   } };

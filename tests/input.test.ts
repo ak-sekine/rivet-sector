@@ -18,13 +18,33 @@ function setup() {
     getBoundingClientRect: () => ({ left: 0, top: 0, width: 100, height: 100 }),
   });
   const canvas = element(), stick = element();
-  const input = createInput(canvas as unknown as HTMLCanvasElement, stick as unknown as HTMLElement);
+  const button = Object.assign(element(), { classList: { add: vi.fn(), remove: vi.fn() } });
+  const reset = vi.fn();
+  const input = createInput(canvas as unknown as HTMLCanvasElement, stick as unknown as HTMLElement, button as unknown as HTMLElement, reset);
   const send = (target: EventTarget, type: string, fields: object) =>
     target.dispatchEvent(Object.assign(new Event(type), { pointerType: 'mouse', pointerId: 1, button: 0, clientX: 0, clientY: 0, ...fields }));
-  return { canvas, stick, input, send, documentTarget, windowTarget };
+  return { canvas, stick, button, reset, input, send, documentTarget, windowTarget };
 }
 afterEach(() => vi.unstubAllGlobals());
 describe('input sensitivity and camera angle contract', () => {
+  it('ignores Shift repeat, requires release and clears interruption requests', () => {
+    const { input, send, windowTarget, reset } = setup();
+    send(windowTarget,'keydown',{ code:'ShiftLeft' }); expect(input.read().dodge).toBe(true);
+    send(windowTarget,'keydown',{ code:'ShiftLeft', repeat:true }); expect(input.read().dodge).toBe(false);
+    send(windowTarget,'keyup',{ code:'ShiftLeft' }); send(windowTarget,'keydown',{ code:'ShiftLeft' });
+    send(windowTarget,'blur',{}); expect(input.read().dodge).toBe(false); expect(reset).toHaveBeenCalled(); input.dispose();
+  });
+  it('keeps three pointers independent and clears canceled dodge', () => {
+    const { input, send, stick, canvas, button } = setup();
+    send(stick,'pointerdown',{ pointerId:1, clientX:50, clientY:15 });
+    send(canvas,'pointerdown',{ pointerType:'touch',pointerId:2 });
+    send(button,'pointerdown',{ pointerType:'touch',pointerId:3 });
+    send(canvas,'pointermove',{ pointerType:'touch',pointerId:2,clientX:20 });
+    expect(input.read()).toMatchObject({ forward:1,lookX:.2,dodge:true }); expect(input.read().dodge).toBe(false);
+    send(button,'pointercancel',{ pointerId:3 });
+    send(button,'pointerdown',{ pointerId:4 }); send(button,'lostpointercapture',{ pointerId:4 });
+    expect(input.read().dodge).toBe(false); expect(input.read().forward).toBe(1); input.dispose();
+  });
   it.each([['mouse', .004], ['touch', .010]])('converts %s drag pixels once and clamps camera pitch', (pointerType, sensitivity) => {
     expect(MOUSE_SENSITIVITY).toBe(.004); expect(TOUCH_SENSITIVITY).toBe(.010);
     const { canvas, input, send } = setup();

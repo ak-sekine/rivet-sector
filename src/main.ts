@@ -10,9 +10,12 @@ let engine: ReturnType<typeof createEngine> | undefined;
 try {
   engine = createEngine(canvas);
   const scene = createScene(engine, canvas);
-  const input = createInput(canvas, document.querySelector<HTMLElement>('#stick')!);
+  const dodgeButton = document.querySelector<HTMLButtonElement>('#dodge')!;
+  const input = createInput(canvas, document.querySelector<HTMLElement>('#stick')!, dodgeButton, () => scene.metadata.reset());
   const renderingDispose = startRendering(engine, scene, canvas, (dt) => {
     scene.metadata.update(input.read(), dt); input.consumeLook();
+    dodgeButton.classList.toggle('cooldown', scene.metadata.dodge.cooldown > 0);
+    dodgeButton.setAttribute('aria-disabled', String(scene.metadata.dodge.cooldown > 0));
   });
   const dispose = () => { input.dispose(); renderingDispose(); };
   showReady();

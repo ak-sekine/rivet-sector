@@ -16,11 +16,12 @@
       <canvas id="scene" aria-label="Rivet Sector TPS操作画面" tabindex="0"></canvas>
       <header class="panel">
         <h1>RIVET SECTOR</h1>
-        <p class="pc-help">WASD：移動 / クリック＋マウス：視点 / Esc：解除<br>マウス固定不可の場合はドラッグ</p>
-        <p class="touch-help">左スティック：移動 / 画面スワイプ：視点</p>
+        <p class="pc-help">WASD：移動 / Shift：回避 / クリック＋マウス：視点 / Esc：解除<br>マウス固定不可の場合はドラッグ</p>
+        <p class="touch-help">左スティック：移動 / 画面スワイプ：視点 / 回避：ステップ</p>
         <p class="portrait-hint">スマートフォンは横画面を推奨します。</p>
       </header>
       <div id="stick" aria-label="移動スティック"><span></span></div>
+      <button id="dodge" type="button" aria-label="ステップ回避">回避</button>
       <p id="status" role="status">WebGLを初期化しています…</p>
       <section id="error" role="alert" hidden></section>
     </main>

@@ -3,6 +3,19 @@ import { describe, expect, it } from 'vitest';
 import { createScene } from '../src/rendering/scene';
 
 describe('TPS scene', () => {
+  it('keeps dodge direction and facing while looking, and resets its visual on interruption', () => {
+    const engine = new NullEngine(), scene = createScene(engine, {} as HTMLCanvasElement);
+    try {
+      const m = scene.metadata, p = m.player;
+      m.update({ x:0,forward:1,lookX:0,lookY:0,dodge:true }, .05);
+      m.update({ x:1,forward:-1,lookX:Math.PI/2,lookY:.5,dodge:false }, .05);
+      expect(p.x).toBe(0); expect(p.z).toBeCloseTo(-3.75); expect(p.yaw).toBe(0);
+      expect(m.camera.yaw).toBeCloseTo(Math.PI/2);
+      expect(scene.getTransformNodeByName('torso-joint')!.rotation.x).toBe(.16);
+      m.reset(); expect(m.dodge.active).toBe(false); expect(m.dodge.cooldown).toBeCloseTo(.6);
+      expect(scene.getTransformNodeByName('torso-joint')!.rotation.x).toBe(0);
+    } finally { scene.dispose(); engine.dispose(); }
+  });
   it('creates the floor, walls, objects, robot, lights and TPS camera', () => {
     const engine = new NullEngine();
     // Camera and movement do not require DOM input in NullEngine.
