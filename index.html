@@ -20,12 +20,14 @@
           <div class="stamina-caption">STAMINA <span id="stamina-value">100 / 100</span></div>
           <div class="stamina-track"><span></span></div>
         </div>
-        <p class="pc-help">WASD：移動 / Shift：回避 / クリック＋マウス：視点 / Esc：解除<br>マウス固定不可の場合はドラッグ</p>
-        <p class="touch-help">左スティック：移動 / 画面スワイプ：視点 / 回避：ステップ</p>
+        <p class="pc-help">WASD：移動 / Shift：回避 / クリック：マウス固定 / Esc：解除<br>固定後の左クリック・F：射撃 / 固定不可の場合はドラッグ＋F</p>
+        <p class="touch-help">左スティック：移動 / スワイプ：視点 / 回避：ステップ / 射撃：発射</p>
         <p class="portrait-hint">スマートフォンは横画面を推奨します。</p>
       </header>
       <div id="stick" aria-label="移動スティック"><span></span></div>
       <button id="dodge" type="button" aria-label="ステップ回避">回避</button>
+      <button id="shoot" type="button" aria-label="エネルギー銃を射撃">射撃</button>
+      <div id="reticle" aria-hidden="true"></div>
       <p id="status" role="status">WebGLを初期化しています…</p>
       <section id="error" role="alert" hidden></section>
     </main>

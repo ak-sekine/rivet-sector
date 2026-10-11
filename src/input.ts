@@ -1,20 +1,28 @@
 import type { Controls } from './game/movement';
 import { MOUSE_SENSITIVITY, TOUCH_SENSITIVITY } from './game/view';
-export function createInput(canvas: HTMLCanvasElement, stick: HTMLElement, dodgeButton?: HTMLElement, onReset?: () => void) {
+export function createInput(canvas: HTMLCanvasElement, stick: HTMLElement, dodgeButton?: HTMLElement, onReset?: () => void, shootButton?: HTMLElement) {
   const state: Controls = { x: 0, forward: 0, lookX: 0, lookY: 0 };
   const keys = new Set<string>();
   let stickId: number | undefined, lookId: number | undefined, lastX = 0, lastY = 0;
   let sx = 0, sy = 0;
   let dodgeId: number | undefined, pendingDodge = false;
+  let shootId: number | undefined, pendingShot = false, mouseShotHeld = false;
+  let shootingSuspended = false;
+  const canRequestShot = () => !shootingSuspended && !document.hidden;
   const shift = (code: string) => code === 'ShiftLeft' || code === 'ShiftRight';
   const abort = new AbortController(), options = { signal: abort.signal };
   const reset = () => {
     keys.clear(); stickId = lookId = undefined; sx = sy = 0;
     dodgeId = undefined; pendingDodge = false; dodgeButton?.classList.remove('pressed'); onReset?.();
-    Object.assign(state, { x: 0, forward: 0, lookX: 0, lookY: 0, dodge: false });
+    shootId = undefined; pendingShot = false; mouseShotHeld = false; shootButton?.classList.remove('pressed');
+    Object.assign(state, { x: 0, forward: 0, lookX: 0, lookY: 0, dodge: false, shoot: false });
     stick.style.setProperty('--stick-x', '0px'); stick.style.setProperty('--stick-y', '0px');
   };
   window.addEventListener('keydown', e => {
+    if (e.code === 'KeyF') {
+      e.preventDefault(); if (canRequestShot() && !e.repeat && !keys.has(e.code)) pendingShot = true;
+      keys.add(e.code);
+    }
     if (shift(e.code)) {
       e.preventDefault();
       if (!e.repeat && !keys.has(e.code) && !keys.has('ShiftLeft') && !keys.has('ShiftRight')) pendingDodge = true;
@@ -24,10 +32,24 @@ export function createInput(canvas: HTMLCanvasElement, stick: HTMLElement, dodge
     if (e.code === 'Escape') { document.exitPointerLock?.(); reset(); }
   }, options);
   window.addEventListener('keyup', e => { if (shift(e.code)) e.preventDefault(); keys.delete(e.code); }, options);
-  window.addEventListener('blur', reset, options);
+  window.addEventListener('blur', () => { shootingSuspended = true; reset(); }, options);
+  const resumeShooting = () => { shootingSuspended = false; pendingShot = false; };
+  window.addEventListener('focus', resumeShooting, options);
+  window.addEventListener('pageshow', resumeShooting, options);
   document.addEventListener('visibilitychange', reset, options);
   document.addEventListener('pointerlockchange', reset, options);
-  window.addEventListener('pagehide', reset, options);
+  window.addEventListener('pagehide', () => { shootingSuspended = true; reset(); }, options);
+  shootButton?.addEventListener('pointerdown', e => {
+    e.preventDefault(); e.stopPropagation();
+    if (shootId !== undefined || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    shootId = e.pointerId; if (canRequestShot()) pendingShot = true;
+    shootButton.setPointerCapture(e.pointerId); shootButton.classList.add('pressed');
+  }, options);
+  for (const name of ['pointerup', 'pointercancel', 'lostpointercapture'] as const) shootButton?.addEventListener(name, e => {
+    e.stopPropagation(); if (e.pointerId !== shootId) return;
+    shootId = undefined; shootButton.classList.remove('pressed');
+    if (name !== 'pointerup') pendingShot = false;
+  }, options);
   dodgeButton?.addEventListener('pointerdown', e => {
     e.preventDefault(); e.stopPropagation();
     if (dodgeId !== undefined || (e.pointerType === 'mouse' && e.button !== 0)) return;
@@ -61,6 +83,10 @@ export function createInput(canvas: HTMLCanvasElement, stick: HTMLElement, dodge
   canvas.addEventListener('pointerdown', e => {
     if (e.pointerType === 'touch') document.documentElement.dataset.input = 'touch';
     else document.documentElement.dataset.input = 'mouse';
+    if (e.pointerType === 'mouse' && e.button === 0 && document.pointerLockElement === canvas) {
+      e.preventDefault(); if (canRequestShot() && !mouseShotHeld) pendingShot = true;
+      mouseShotHeld = true; return;
+    }
     if (lookId !== undefined || (e.pointerType === 'mouse' && e.button !== 0)) return;
     e.preventDefault(); lookId = e.pointerId; lastX = e.clientX; lastY = e.clientY;
     canvas.setPointerCapture(e.pointerId);
@@ -79,10 +105,14 @@ export function createInput(canvas: HTMLCanvasElement, stick: HTMLElement, dodge
       lastX = e.clientX; lastY = e.clientY;
     }
   }, options);
-  const stopLook = (e: PointerEvent) => { if (e.pointerId === lookId) lookId = undefined; };
+  const stopLook = (e: PointerEvent) => {
+    if (e.pointerId === lookId) lookId = undefined;
+    if (e.pointerType === 'mouse') { mouseShotHeld = false; if (e.type !== 'pointerup') pendingShot = false; }
+  };
   for (const name of ['pointerup', 'pointercancel', 'lostpointercapture'] as const) canvas.addEventListener(name, stopLook, options);
   return { read() {
     state.dodge = pendingDodge; pendingDodge = false;
+    state.shoot = pendingShot; pendingShot = false;
     state.x = Number(keys.has('KeyD')) - Number(keys.has('KeyA')) + sx;
     state.forward = Number(keys.has('KeyW')) - Number(keys.has('KeyS')) + sy;
     return state;

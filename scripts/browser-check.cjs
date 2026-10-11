@@ -41,6 +41,50 @@ const baseUrl = process.env.TEST_BASE_URL || 'http://localhost:4173/rivet-sector
     const place = (page, x, z) => page.evaluate(([x, z]) => Object.assign(window.testScene.metadata.player, { x, z }), [x, z]);
     const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
     await setup(page);
+    const shots = p => p.evaluate(() => window.testScene.metadata.shots);
+    const aimTarget = async p => {
+      await p.evaluate(() => {
+        const m=window.testScene.metadata;
+        Object.assign(m.player,{x:0,z:-5,yaw:0});
+        // The initial pitch is .25. Face the target with shoulder compensation.
+        m.camera.look(-.09-m.camera.yaw,-.21);
+      });
+      await p.waitForTimeout(700);
+    };
+    const gunPage = await browser.newPage({viewport:{width:1280,height:720}});
+    await setup(gunPage); await aimTarget(gunPage);
+    assert.equal(await gunPage.locator('#shoot').isVisible(),false);
+    const reticle = await gunPage.locator('#reticle').boundingBox();
+    assert.equal(reticle.x+reticle.width/2,640); assert.equal(reticle.y+reticle.height/2,360);
+    assert.equal(await gunPage.locator('#reticle').evaluate(el=>getComputedStyle(el).pointerEvents),'none');
+    await gunPage.mouse.click(640,360); await gunPage.waitForTimeout(100);
+    assert.equal(await shots(gunPage),0); // Lock-acquisition click.
+    assert(await gunPage.evaluate(()=>document.pointerLockElement===document.querySelector('#scene')));
+    await gunPage.mouse.down();
+    const firstHit=await gunPage.waitForFunction(()=>{
+      const m=window.testScene.metadata;
+      return m.shots===1 && {kind:m.lastShot.kind,flashing:m.target.flashing};
+    },undefined,{polling:'raf'});
+    assert.deepEqual(await firstHit.jsonValue(),{kind:'target',flashing:true});
+    await gunPage.screenshot({path:'.cache/tps-shooting-pc.png'});
+    await gunPage.waitForTimeout(500); assert.equal(await shots(gunPage),1);
+    assert.equal(await gunPage.evaluate(()=>window.testScene.metadata.target.flashing),false);
+    await gunPage.mouse.up(); await gunPage.keyboard.press('Escape');
+    await gunPage.keyboard.down('f'); await gunPage.waitForTimeout(500); assert.equal(await shots(gunPage),2);
+    await gunPage.keyboard.up('f');
+    // A real stage obstacle between muzzle and target must stop a shot.
+    await gunPage.evaluate(()=>{
+      const wall=window.testScene.getMeshByName('crate-a');
+      wall.position.set(0,1.5,0); wall.computeWorldMatrix(true);
+    });
+    await gunPage.keyboard.press('f'); await gunPage.waitForFunction(()=>window.testScene.metadata.shots===3);
+    assert.equal(await gunPage.evaluate(()=>window.testScene.metadata.lastShot.kind),'surface');
+    assert.equal(await gunPage.evaluate(()=>window.testScene.metadata.target.flashing),false);
+    await gunPage.evaluate(()=>window.dispatchEvent(new Event('blur')));
+    assert.equal(await gunPage.evaluate(()=>window.testScene.getMeshByName('shot-tracer')),null);
+    await gunPage.keyboard.press('f'); await gunPage.evaluate(()=>window.dispatchEvent(new Event('focus')));
+    await gunPage.waitForTimeout(300); assert.equal(await shots(gunPage),3);
+    await gunPage.close();
     assert(await page.evaluate(() => window.testScene.getMeshByName('player-head').isEnabled()));
     assert.equal(await page.evaluate(() => window.testScene.activeCamera.name), 'tps');
     assert.equal(await page.locator('#stick').isVisible(), false);
@@ -121,6 +165,16 @@ const baseUrl = process.env.TEST_BASE_URL || 'http://localhost:4173/rivet-sector
     const sx = box.x + box.width / 2, sy = box.y + box.height / 2;
     const cdp = await mobile.context().newCDPSession(mobile);
     const touch = (type, points) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: points });
+    await aimTarget(mobile);
+    const shotBox=await mobile.locator('#shoot').boundingBox();
+    assert(shotBox.width>=44 && shotBox.height>=44);
+    const shotFinger={x:shotBox.x+shotBox.width/2,y:shotBox.y+shotBox.height/2,id:4};
+    await touch('touchStart',[shotFinger]);
+    await mobile.waitForFunction(()=>window.testScene.metadata.shots===1);
+    assert.equal(await mobile.evaluate(()=>window.testScene.metadata.lastShot.kind),'target');
+    assert.equal(await mobile.evaluate(()=>window.testScene.metadata.dodge.stamina),100);
+    await mobile.waitForTimeout(350); assert.equal(await shots(mobile),1);
+    await touch('touchEnd',[]);
     await touch('touchStart', [{ x: sx, y: sy, id: 1 }, { x: 300, y: 400, id: 2 }]);
     const m0 = await state(mobile);
     await touch('touchMove', [{ x: sx, y: sy - 40, id: 1 }, { x: 340, y: 430, id: 2 }]);
@@ -140,13 +194,17 @@ const baseUrl = process.env.TEST_BASE_URL || 'http://localhost:4173/rivet-sector
     await touch('touchStart', [{ x:sx,y:sy-40,id:1 }, { x:280,y:400,id:2 }, db]);
     await mobile.waitForFunction(() => window.testScene.metadata.dodge.active);
     assert(await mobile.locator('#dodge').evaluate(b => b.classList.contains('dodging') && b.classList.contains('pressed')));
+    const fourShots=await shots(mobile);
+    await touch('touchStart', [{x:sx,y:sy-40,id:1},{x:280,y:400,id:2},db,shotFinger]);
+    await mobile.waitForFunction(n=>window.testScene.metadata.shots===n+1,fourShots);
+    assert.equal(await mobile.evaluate(()=>window.testScene.metadata.dodge.stamina),75);
     const dodgeYaw = (await state(mobile)).yaw;
     await touch('touchMove', [{ x:sx,y:sy,id:1 }, { x:300,y:410,id:2 }, db]);
     await mobile.waitForTimeout(900);
     const dodgeEnd = await state(mobile);
     assert(Math.abs(dodgeEnd.yaw - dodgeYaw - .2) < 1e-6);
-    // The stick also moves normally while CDP adds the third finger; exact distance is unit-tested.
-    assert(Math.abs(dodgeEnd.player.x) < .01); assert(dodgeEnd.player.z > -3.6 && dodgeEnd.player.z < -2.5, JSON.stringify(dodgeEnd));
+    // The stick also moves normally while CDP adds fingers; exact dodge distance is unit-tested.
+    assert(Math.abs(dodgeEnd.player.x) < .01); assert(dodgeEnd.player.z > -3.6 && dodgeEnd.player.z < -2.2, JSON.stringify(dodgeEnd));
     await mobile.waitForTimeout(200); assert.equal((await state(mobile)).player.z, dodgeEnd.player.z);
     await touch('touchCancel', []);
     assert.equal(await mobile.locator('#dodge').evaluate(b => b.classList.contains('pressed')), false);
@@ -157,10 +215,14 @@ const baseUrl = process.env.TEST_BASE_URL || 'http://localhost:4173/rivet-sector
     assert.deepEqual(await mobile.locator('#scene').evaluate(canvas => [canvas.clientWidth, canvas.clientHeight]), [844, 390]);
     assert(landscape.x >= 0 && landscape.y >= 0 && landscape.y + landscape.height <= 390);
     const landscapeDodge = await mobile.locator('#dodge').boundingBox();
+    const landscapeShoot = await mobile.locator('#shoot').boundingBox();
+    assert(landscapeShoot.y+landscapeShoot.height<=landscapeDodge.y-12);
+    assert(landscapeShoot.x+landscapeShoot.width<=844 && landscapeShoot.y>=0);
     assert(landscapeDodge.x + landscapeDodge.width <= 844 && landscapeDodge.y + landscapeDodge.height <= 390);
     const gauge = await mobile.locator('#stamina').boundingBox();
     assert(gauge.x >= 0 && gauge.y >= 0 && gauge.x + gauge.width <= 844);
     assert(gauge.y + gauge.height < Math.min(landscape.y, landscapeDodge.y));
+    assert(gauge.y+gauge.height<landscapeShoot.y);
     await mobile.screenshot({ path: '.cache/tps-mobile-landscape.png' });
     assert.equal(await mobile.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight), true);
     assert.deepEqual(errors, []);
@@ -169,6 +231,6 @@ const baseUrl = process.env.TEST_BASE_URL || 'http://localhost:4173/rivet-sector
     await failure.addInitScript(() => HTMLCanvasElement.prototype.getContext = () => null);
     await failure.goto(baseUrl);
     await failure.waitForSelector('#error:not([hidden])');
-    console.log('PASS: robot/TPS/PWA/WebGL, WASD/Shift, dodge hold/stamina/torso, pointer lock/Esc/drag, collision, three touch pointers, portrait/landscape control bounds');
+    console.log('PASS: robot/TPS/PWA/WebGL, WASD/Shift, stamina, pointer lock/Esc/drag, collision, reticle, locked mouse/F/touch shots, target flash, wall occlusion, four touch pointers, portrait/landscape control bounds');
   } finally { await browser.close(); }
 })().catch(e => { console.error(e); process.exitCode = 1; });

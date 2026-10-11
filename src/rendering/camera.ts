@@ -29,7 +29,8 @@ export function createTpsCamera(scene: Scene) {
         if (hit?.hit) distance = Math.min(distance, Math.max(.05, hit.distance - CAMERA.clearance));
       }
       camera.position.set(target.x + direction.x * distance, target.y + direction.y * distance, target.z + direction.z * distance);
-      camera.setTarget(target); initialized = true;
+      // Keep the player to the left of the sight line in the shoulder view.
+      camera.setTarget(target.add(new Vector3(Math.cos(yaw) * CAMERA.shoulder, 0, -Math.sin(yaw) * CAMERA.shoulder))); initialized = true;
     },
   };
 }

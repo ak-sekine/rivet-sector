@@ -18,6 +18,8 @@ export function startRendering(engine: Engine, scene: Scene, canvas: HTMLCanvasE
   const focus = () => { focused = true; resetTime(); };
   window.addEventListener('blur', blur);
   window.addEventListener('focus', focus);
+  window.addEventListener('pagehide', resetTime);
+  window.addEventListener('pageshow', resetTime);
   document.addEventListener('visibilitychange', resetTime);
   engine.runRenderLoop(() => {
     const now = performance.now();
@@ -27,6 +29,7 @@ export function startRendering(engine: Engine, scene: Scene, canvas: HTMLCanvasE
   return () => {
     observer.disconnect();
     window.removeEventListener('blur', blur); window.removeEventListener('focus', focus);
+    window.removeEventListener('pagehide', resetTime); window.removeEventListener('pageshow', resetTime);
     document.removeEventListener('visibilitychange', resetTime);
     window.removeEventListener('resize', resize);
     engine.stopRenderLoop();

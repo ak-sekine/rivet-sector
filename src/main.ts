@@ -12,9 +12,12 @@ try {
   engine = createEngine(canvas);
   const scene = createScene(engine, canvas);
   const dodgeButton = document.querySelector<HTMLButtonElement>('#dodge')!;
+  const shootButton = document.querySelector<HTMLButtonElement>('#shoot')!;
   const staminaGauge = document.querySelector<HTMLElement>('#stamina')!;
   const staminaValue = document.querySelector<HTMLElement>('#stamina-value')!;
   const updateHud = () => {
+    shootButton.classList.toggle('cooling', scene.metadata.shooting.remaining > 0);
+    shootButton.setAttribute('aria-disabled', String(scene.metadata.shooting.remaining > 0));
     const dodge = scene.metadata.dodge;
     dodgeButton.classList.toggle('dodging', dodge.active);
     dodgeButton.classList.toggle('exhausted', dodge.phase === 'exhausted');
@@ -25,7 +28,7 @@ try {
     staminaGauge.setAttribute('aria-valuemax', String(dodge.maxStamina));
     staminaValue.textContent = `${Math.floor(dodge.stamina)} / ${dodge.maxStamina}`;
   };
-  const input = createInput(canvas, document.querySelector<HTMLElement>('#stick')!, dodgeButton, () => { scene.metadata.reset(); updateHud(); });
+  const input = createInput(canvas, document.querySelector<HTMLElement>('#stick')!, dodgeButton, () => { scene.metadata.reset(); updateHud(); }, shootButton);
   const renderingDispose = startRendering(engine, scene, canvas, (dt) => {
     scene.metadata.update(input.read(), dt); input.consumeLook();
     updateHud();

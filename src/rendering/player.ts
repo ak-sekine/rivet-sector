@@ -23,5 +23,15 @@ export function createPlayer(scene: Scene): TransformNode {
     part(`leg-${s}`, .25, .65, .28, s * .21, .475, 0);
     part(`foot-${s}`, .3, .15, .45, s * .21, .075, .08, 2);
   }
+  const weapon = new TransformNode('weapon', scene);
+  weapon.parent = scene.getTransformNodeByName('arm-1-joint')!;
+  weapon.position.set(0, -.15, .28);
+  const glow = new StandardMaterial('weapon-glow', scene);
+  glow.diffuseColor = Color3.FromHexString('#32a89d'); glow.emissiveColor = new Color3(.1,.65,.55);
+  for (const [name, w,h,d,z] of [['body',.22,.24,.55,0], ['barrel',.13,.13,.3,.4], ['accent',.23,.06,.25,.02]] as const) {
+    const mesh = MeshBuilder.CreateBox(`player-gun-${name}`, { width:w,height:h,depth:d }, scene);
+    mesh.parent = weapon; mesh.position.z = z; mesh.material = name === 'accent' ? glow : materials[2]; mesh.isPickable = false;
+  }
+  const muzzle = new TransformNode('muzzle', scene); muzzle.parent = weapon; muzzle.position.z = .56;
   return root;
 }

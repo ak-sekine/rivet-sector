@@ -2,7 +2,7 @@ import { canStand } from './collision';
 export const PLAYER_SPEED = 6, TURN_SPEED = 12, MAX_FRAME_SECONDS = .05;
 export interface PlayerState { x: number; z: number; yaw: number }
 /** lookX/lookY are angular deltas in radians; dodge is a one-shot press from the input layer. */
-export interface Controls { x: number; forward: number; lookX: number; lookY: number; dodge?: boolean }
+export interface Controls { x: number; forward: number; lookX: number; lookY: number; dodge?: boolean; shoot?: boolean }
 export const frameSeconds = (s: number) => Number.isFinite(s) ? Math.max(0, Math.min(MAX_FRAME_SECONDS, s)) : 0;
 export function movementDirection(x: number, forward: number, yaw: number, result = { x: 0, z: 0 }) {
   const scale = 1 / Math.max(1, Math.hypot(x, forward));

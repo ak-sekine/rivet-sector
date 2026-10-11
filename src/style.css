@@ -34,4 +34,14 @@ html[data-input="mouse"] .pc-help { display: block; }
 #stamina.exhausted .stamina-caption { color: #d69a65; }
 @media (any-pointer: coarse) { #dodge { display: block; } }
 html[data-input="touch"] #dodge { display: block; }
+#shoot { display: none; position: absolute; right: calc(24px + env(safe-area-inset-right, 0px)); bottom: calc(116px + env(safe-area-inset-bottom, 0px)); width: 64px; height: 64px; border: 2px solid #5ed8cd; border-radius: 50%; background: #152633dd; color: #e4eef6; font: inherit; font-size: 14px; touch-action: none; user-select: none; -webkit-user-select: none; }
+#shoot.cooling { border-color: #526578; }
+#shoot.pressed { background: #32a89d; color: #101923; transform: scale(.94); }
+@media (any-pointer: coarse) { #shoot { display: block; } }
+html[data-input="touch"] #shoot { display: block; }
+html[data-input="mouse"] #shoot, html[data-input="mouse"] #dodge { display: none; }
+#reticle { position: absolute; left: 50%; top: 50%; width: 20px; height: 20px; transform: translate(-50%, -50%); pointer-events: none; }
+#reticle::before, #reticle::after { content: ''; position: absolute; background: #5ed8cd; box-shadow: 0 0 2px #101923; }
+#reticle::before { left: 0; top: 9px; width: 20px; height: 2px; background: linear-gradient(to right, #5ed8cd 0 35%, transparent 35% 65%, #5ed8cd 65%); }
+#reticle::after { top: 0; left: 9px; height: 20px; width: 2px; background: linear-gradient(to bottom, #5ed8cd 0 35%, transparent 35% 65%, #5ed8cd 65%); }
 @media (min-height: 451px) { #stick { bottom: calc(32px + env(safe-area-inset-bottom, 0px)); } }
