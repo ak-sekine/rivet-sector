@@ -24,8 +24,14 @@ html[data-input="mouse"] .pc-help { display: block; }
 /* Keep controls away from the home indicator and landscape notch. */
 #stick { left: calc(24px + env(safe-area-inset-left, 0px)); }
 #dodge { display: none; position: absolute; right: calc(24px + env(safe-area-inset-right, 0px)); bottom: calc(36px + env(safe-area-inset-bottom, 0px)); width: 64px; height: 64px; border: 2px solid #5ed8cd; border-radius: 50%; background: #152633dd; color: #e4eef6; font: inherit; font-size: 14px; touch-action: none; user-select: none; -webkit-user-select: none; }
-#dodge.cooldown { border-color: #526578; color: #92a4b4; background: #101923dd; }
-#dodge.pressed { background: #32a89d; color: #101923; transform: scale(.94); }
+#dodge.exhausted { border-color: #526578; color: #92a4b4; background: #101923dd; }
+#dodge.pressed:not(.exhausted), #dodge.dodging { background: #32a89d; color: #101923; transform: scale(.94); }
+#stamina { --stamina: 100%; width: min(220px, 100%); margin-top: 5px; }
+.stamina-caption { display: flex; justify-content: space-between; font-size: 10px; letter-spacing: .08em; }
+.stamina-track { height: 5px; margin-top: 3px; background: #52657866; }
+.stamina-track span { display: block; width: var(--stamina); height: 100%; background: #5ed8cd; }
+#stamina.exhausted .stamina-track span { background: #d69a65; }
+#stamina.exhausted .stamina-caption { color: #d69a65; }
 @media (any-pointer: coarse) { #dodge { display: block; } }
 html[data-input="touch"] #dodge { display: block; }
 @media (min-height: 451px) { #stick { bottom: calc(32px + env(safe-area-inset-bottom, 0px)); } }

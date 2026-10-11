@@ -83,6 +83,37 @@ const baseUrl = process.env.TEST_BASE_URL || 'http://localhost:4173/rivet-sector
     await page.keyboard.up('w'); await page.waitForTimeout(350); await page.keyboard.up('Shift');
     assert((await state(page)).player.z > -6.05);
     assert.equal(await page.evaluate(() => window.testScene.getTransformNodeByName('torso-joint').rotation.x), 0);
+    // Fresh page: alternate directions to stay clear of obstacles while spending all stamina.
+    const staminaPage = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+    await setup(staminaPage);
+    assert.equal(await staminaPage.locator('#stamina').getAttribute('aria-valuenow'), '100');
+    for (const key of ['s', 'w', 's', 'w']) {
+      await staminaPage.keyboard.down(key); await staminaPage.keyboard.down('Shift');
+      await staminaPage.waitForFunction(() => window.testScene.metadata.dodge.active);
+      await staminaPage.keyboard.up(key); await staminaPage.keyboard.up('Shift');
+      await staminaPage.waitForFunction(() => !window.testScene.metadata.dodge.active);
+    }
+    assert(await staminaPage.evaluate(() => window.testScene.metadata.dodge.stamina < 25));
+    assert.equal(await staminaPage.locator('#dodge').getAttribute('aria-disabled'), 'true');
+    assert(await staminaPage.locator('#stamina').evaluate(g => g.classList.contains('exhausted')));
+    await staminaPage.keyboard.down('Shift');
+    await staminaPage.waitForTimeout(100);
+    assert.equal(await staminaPage.evaluate(() => window.testScene.metadata.dodge.active), false);
+    await staminaPage.evaluate(() => window.dispatchEvent(new Event('blur')));
+    const paused = await staminaPage.evaluate(() => ({ stamina: window.testScene.metadata.dodge.stamina, delay: window.testScene.metadata.dodge.recoveryDelay }));
+    await staminaPage.waitForTimeout(700);
+    assert.deepEqual(await staminaPage.evaluate(() => ({ stamina: window.testScene.metadata.dodge.stamina, delay: window.testScene.metadata.dodge.recoveryDelay })), paused);
+    await staminaPage.keyboard.up('Shift');
+    await staminaPage.evaluate(() => window.dispatchEvent(new Event('focus')));
+    await staminaPage.waitForFunction(() => window.testScene.metadata.dodge.stamina >= 25);
+    assert.equal(await staminaPage.evaluate(() => window.testScene.metadata.dodge.active), false);
+    assert.equal(await staminaPage.locator('#dodge').getAttribute('aria-disabled'), 'false');
+    await staminaPage.keyboard.down('Shift');
+    await staminaPage.waitForFunction(() => window.testScene.metadata.dodge.active);
+    await staminaPage.keyboard.up('Shift');
+    await staminaPage.waitForFunction(() => !window.testScene.metadata.dodge.active);
+    await staminaPage.waitForFunction(() => window.testScene.metadata.dodge.stamina === 100);
+    assert.equal(await staminaPage.locator('#stamina-value').textContent(), '100 / 100');
     const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
     await setup(mobile); assert(await mobile.locator('#stick').isVisible());
     assert(await mobile.locator('.portrait-hint').isVisible());
@@ -108,7 +139,7 @@ const baseUrl = process.env.TEST_BASE_URL || 'http://localhost:4173/rivet-sector
     await touch('touchStart', [{ x:sx,y:sy-40,id:1 }, { x:280,y:400,id:2 }]);
     await touch('touchStart', [{ x:sx,y:sy-40,id:1 }, { x:280,y:400,id:2 }, db]);
     await mobile.waitForFunction(() => window.testScene.metadata.dodge.active);
-    assert(await mobile.locator('#dodge').evaluate(b => b.classList.contains('cooldown') && b.classList.contains('pressed')));
+    assert(await mobile.locator('#dodge').evaluate(b => b.classList.contains('dodging') && b.classList.contains('pressed')));
     const dodgeYaw = (await state(mobile)).yaw;
     await touch('touchMove', [{ x:sx,y:sy,id:1 }, { x:300,y:410,id:2 }, db]);
     await mobile.waitForTimeout(900);
@@ -127,6 +158,9 @@ const baseUrl = process.env.TEST_BASE_URL || 'http://localhost:4173/rivet-sector
     assert(landscape.x >= 0 && landscape.y >= 0 && landscape.y + landscape.height <= 390);
     const landscapeDodge = await mobile.locator('#dodge').boundingBox();
     assert(landscapeDodge.x + landscapeDodge.width <= 844 && landscapeDodge.y + landscapeDodge.height <= 390);
+    const gauge = await mobile.locator('#stamina').boundingBox();
+    assert(gauge.x >= 0 && gauge.y >= 0 && gauge.x + gauge.width <= 844);
+    assert(gauge.y + gauge.height < Math.min(landscape.y, landscapeDodge.y));
     await mobile.screenshot({ path: '.cache/tps-mobile-landscape.png' });
     assert.equal(await mobile.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight), true);
     assert.deepEqual(errors, []);
@@ -135,6 +169,6 @@ const baseUrl = process.env.TEST_BASE_URL || 'http://localhost:4173/rivet-sector
     await failure.addInitScript(() => HTMLCanvasElement.prototype.getContext = () => null);
     await failure.goto(baseUrl);
     await failure.waitForSelector('#error:not([hidden])');
-    console.log('PASS: robot/TPS/PWA/WebGL, WASD/Shift, dodge hold/cooldown/torso, pointer lock/Esc/drag, collision, three touch pointers, portrait/landscape control bounds');
+    console.log('PASS: robot/TPS/PWA/WebGL, WASD/Shift, dodge hold/stamina/torso, pointer lock/Esc/drag, collision, three touch pointers, portrait/landscape control bounds');
   } finally { await browser.close(); }
 })().catch(e => { console.error(e); process.exitCode = 1; });

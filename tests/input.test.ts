@@ -4,6 +4,7 @@ import { Scene } from '@babylonjs/core/scene';
 import { createInput } from '../src/input';
 import { createTpsCamera } from '../src/rendering/camera';
 import { CAMERA, MOUSE_SENSITIVITY, TOUCH_SENSITIVITY } from '../src/game/view';
+import { createDodge } from '../src/game/dodge';
 
 function setup() {
   const windowTarget = new EventTarget();
@@ -27,6 +28,41 @@ function setup() {
 }
 afterEach(() => vi.unstubAllGlobals());
 describe('input sensitivity and camera angle contract', () => {
+  it('Shift and touch holds produce only one step, including repeated events', () => {
+    const { input, send, windowTarget, button } = setup();
+    const d = createDodge(), p = { x: 0, z: -5, yaw: 0 };
+    send(windowTarget, 'keydown', { code: 'ShiftLeft' });
+    for (let i = 0; i < 20; i++) {
+      if (i > 0) send(windowTarget, 'keydown', { code: 'ShiftLeft', repeat: true });
+      d.update(p, input.read(), 0, .05);
+    }
+    expect(p.z).toBeCloseTo(-7.5);
+    send(windowTarget, 'keyup', { code: 'ShiftLeft' });
+    send(button, 'pointerdown', { pointerId: 3 });
+    d.update(p, { ...input.read(), forward: 1 }, 0, .05);
+    for (let i = 0; i < 20; i++) {
+      send(button, 'pointerdown', { pointerId: 3 }); d.update(p, input.read(), 0, .05);
+    }
+    expect(p.z).toBeCloseTo(-5); input.dispose();
+  });
+  it('does not queue insufficient Shift or touch input and accepts a fresh press after recovery', () => {
+    const { input, send, windowTarget, button } = setup();
+    const dodge = createDodge(), p = { x: 0, z: -5, yaw: 0 };
+    // Cancel each step to isolate input/consumption from collisions and clock progress.
+    for (let i = 0; i < 4; i++) {
+      send(windowTarget, 'keydown', { code: 'ShiftLeft' }); dodge.update(p, input.read(), 0, 0);
+      send(windowTarget, 'keyup', { code: 'ShiftLeft' }); dodge.reset(); dodge.update(p, input.read(), 0, 0);
+    }
+    expect(dodge.stamina).toBe(0);
+    send(windowTarget, 'keydown', { code: 'ShiftLeft' }); dodge.update(p, input.read(), 0, 0);
+    send(button, 'pointerdown', { pointerId: 3, pointerType: 'touch' }); dodge.update(p, input.read(), 0, 0);
+    for (let i = 0; i < 25; i++) dodge.update(p, input.read(), 0, .05);
+    expect(dodge.stamina).toBeCloseTo(30); expect(dodge.active).toBe(false);
+    send(button, 'pointerup', { pointerId: 3 });
+    send(button, 'pointerdown', { pointerId: 4, pointerType: 'touch' }); dodge.update(p, input.read(), 0, 0);
+    expect(dodge.active).toBe(true); expect(dodge.stamina).toBeCloseTo(5);
+    input.dispose();
+  });
   it('ignores Shift repeat, requires release and clears interruption requests', () => {
     const { input, send, windowTarget, reset } = setup();
     send(windowTarget,'keydown',{ code:'ShiftLeft' }); expect(input.read().dodge).toBe(true);
