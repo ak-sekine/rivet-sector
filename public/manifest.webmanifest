@@ -1,16 +1,26 @@
 {
   "name": "Rivet Sector",
   "short_name": "Rivet Sector",
-  "description": "ボクセル風SF TPSの基本操作プロトタイプ",
+  "description": "縦画面で遊ぶ見下ろし型2Dアクションシューティング",
   "id": "/rivet-sector/",
   "display": "standalone",
-  "orientation": "landscape",
+  "orientation": "portrait",
   "start_url": "/rivet-sector/",
   "scope": "/rivet-sector/",
   "background_color": "#101923",
   "theme_color": "#101923",
   "icons": [
-    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
   ]
 }

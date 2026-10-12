@@ -54,7 +54,7 @@ describe('2D training simulation', () => {
     }
     expect(segmentRect({ x: 0, y: 0 }, { x: 1000, y: 0 }, { x: 55, y: -1, width: 1, height: 2 })).toBeCloseTo(.055);
   });
-  it('steps 80px in .2s with normalized diagonals and TPS stamina constants', () => {
+  it('steps 80px in .2s with normalized diagonals and unchanged stamina constants', () => {
     const g = emptyGame(); g.step({ ...input(1, 1), dodge: true }, .2);
     expect(Math.hypot(g.state.player.x - SPAWN.x, g.state.player.y - SPAWN.y)).toBeCloseTo(STEP_DISTANCE, 6);
     expect(g.state.dodgeRemaining).toBe(0); expect(g.state.stamina).toBe(75); expect(g.state.recoveryDelay).toBeCloseTo(.3);

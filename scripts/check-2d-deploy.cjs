@@ -24,10 +24,10 @@ const assert = require('node:assert/strict');
   }));
   for (const path of ['', '2d/']) {
     const response = await fetch(root + path + `?commit=${sha}`, { cache: 'no-store', signal: AbortSignal.timeout(20000) }); assert.equal(response.status, 200);
-    const html = await response.text(); assert(html.includes('href="/rivet-sector/manifest.webmanifest"'));
-    assert(html.includes(path ? '2D Training Lab' : 'TPS Prototype'));
+    const html = await response.text(); if (!path) assert(html.includes('href="/rivet-sector/manifest.webmanifest"'));
+    assert(html.includes(path ? 'location.replace' : '2D Action Shooter'));
     const local = readFileSync(path ? 'dist/2d/index.html' : 'dist/index.html', 'utf8');
     assert.equal(html, local, 'Published HTML must match the locally tested production build');
   }
-  console.log(`PASS commit ${sha}: Pages workflow success, TPS + 2D HTML match dist, ${results.length} public assets HTTP 200 and byte-identical`);
+  console.log(`PASS commit ${sha}: Pages workflow success, 2D + legacy redirect HTML match dist, ${results.length} public assets HTTP 200 and byte-identical`);
 })().catch(error => { console.error(error); process.exitCode = 1; });

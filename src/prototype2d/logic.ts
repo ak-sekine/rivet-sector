@@ -1,4 +1,5 @@
-import { DODGE_STAMINA_COST, STAMINA_MAX, STAMINA_RECOVERY_DELAY, STAMINA_RECOVERY_RATE } from '../game/dodge';
+export const STAMINA_MAX = 100, DODGE_STAMINA_COST = 25;
+export const STAMINA_RECOVERY_RATE = 40, STAMINA_RECOVERY_DELAY = .5;
 import { solids, SPAWN, TARGET, type Rect } from './stage';
 
 export const SPEED = 144, PLAYER_RADIUS = 10;

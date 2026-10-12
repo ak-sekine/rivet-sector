@@ -16,11 +16,12 @@ export function createControls() {
       if (control === 'move') movement = v; else aim = v;
     },
     end(control: 'move' | 'aim' | 'dodge', id: number, cancelled = false) {
-      if (pointers.get(control) !== id) return;
+      if (pointers.get(control) !== id) return false;
       pointers.delete(control);
       if (control === 'move') movement = { x: 0, y: 0 };
       if (control === 'aim') aim = { x: 0, y: 0 };
       if (control === 'dodge' && cancelled) dodge = false;
+      return true;
     },
     key(code: string, down: boolean) {
       if (down) { if (code === 'Space' && !keys.has(code)) dodge = true; keys.add(code); }
@@ -49,7 +50,13 @@ export function bindInput(canvas: HTMLCanvasElement, screenAim: (x: number, y: n
     }
   };
   const reset = () => { controls.reset(); pendingDodge = false; mousePosition = undefined; releaseUi(); suspend(); };
-  const active = () => focused && !document.hidden && !matchMedia('(any-pointer: coarse) and (orientation: portrait)').matches;
+  const updateSize = () => {
+    const region = document.getElementById('lab')!;
+    const touch = matchMedia('(any-pointer: coarse)').matches;
+    document.getElementById('size-hint')!.hidden = !(touch && (region.clientWidth < 280 || region.clientHeight < 440));
+  };
+  updateSize();
+  const active = () => focused && !document.hidden && document.getElementById('size-hint')!.hidden;
   for (const [id, kind] of [['move-stick', 'move'], ['aim-stick', 'aim']] as const) {
     const element = document.getElementById(id)!;
     const drag = (e: PointerEvent) => {
@@ -68,7 +75,8 @@ export function bindInput(canvas: HTMLCanvasElement, screenAim: (x: number, y: n
     const end = (event: Event) => {
       const e = event as PointerEvent;
       if (!element.hasPointerCapture(e.pointerId) && event.type !== 'lostpointercapture') return;
-      controls.end(kind, e.pointerId); element.classList.remove('active'); element.style.removeProperty('--x'); element.style.removeProperty('--y');
+      if (!controls.end(kind, e.pointerId)) return;
+      element.classList.remove('active'); element.style.removeProperty('--x'); element.style.removeProperty('--y');
       if (element.hasPointerCapture(e.pointerId)) element.releasePointerCapture(e.pointerId);
     };
     for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) listen(element, type, end);
@@ -80,7 +88,9 @@ export function bindInput(canvas: HTMLCanvasElement, screenAim: (x: number, y: n
     button.setPointerCapture(e.pointerId); button.classList.add('pressed'); unlock();
   });
   for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) listen(button, type, event => {
-    const e = event as PointerEvent; controls.end('dodge', e.pointerId, type !== 'pointerup'); button.classList.remove('pressed');
+    const e = event as PointerEvent; if (!controls.end('dodge', e.pointerId, type !== 'pointerup')) return;
+    button.classList.remove('pressed');
+    if (button.hasPointerCapture(e.pointerId)) button.releasePointerCapture(e.pointerId);
   });
   const mouse = (event: Event, fire?: boolean) => {
     const e = event as PointerEvent;
@@ -106,7 +116,7 @@ export function bindInput(canvas: HTMLCanvasElement, screenAim: (x: number, y: n
   listen(window, 'focus', () => { focused = true; });
   listen(window, 'pagehide', reset);
   listen(document, 'visibilitychange', reset);
-  listen(window, 'resize', reset);
+  listen(window, 'resize', () => { updateSize(); reset(); });
   listen(document, 'contextmenu', e => e.preventDefault());
   listen(document, 'touchmove', e => e.preventDefault(), { passive: false });
   const mute = document.getElementById('mute')!;

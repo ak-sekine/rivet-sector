@@ -15,7 +15,6 @@
     "check:2d": "node scripts/browser-check-2d.cjs"
   },
   "dependencies": {
-    "@babylonjs/core": "9.30.0",
     "phaser": "4.2.1"
   },
   "devDependencies": {

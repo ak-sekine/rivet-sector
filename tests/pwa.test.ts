@@ -6,10 +6,10 @@ import { build } from 'vite';
 const read = (path: string) => readFileSync(new URL(`../${path}`, import.meta.url));
 const manifest = JSON.parse(read('public/manifest.webmanifest').toString());
 describe('PWA assets and production paths', () => {
-  it('declares standalone landscape gameplay within the Pages base', () => {
+  it('declares standalone portrait gameplay within the Pages base', () => {
     expect(manifest).toMatchObject({ name: 'Rivet Sector', short_name: 'Rivet Sector',
       start_url: '/rivet-sector/', scope: '/rivet-sector/', display: 'standalone',
-      orientation: 'landscape', background_color: '#101923', theme_color: '#101923' });
+      orientation: 'portrait', background_color: '#101923', theme_color: '#101923' });
     for (const icon of manifest.icons) {
       expect(new URL(icon.src, 'https://example.com/rivet-sector/manifest.webmanifest').pathname).toBe(`/rivet-sector/${icon.src}`);
       expect(icon.type).toBe('image/png');
@@ -43,9 +43,11 @@ describe('PWA assets and production paths', () => {
       expect(read(`.cache/pwa-build/${path}`)).toEqual(read(`public/${path}`));
     }
     const lab = read('.cache/pwa-build/2d/index.html').toString();
-    expect(lab).toContain('2D Training Lab');
-    expect(lab).toMatch(/src="\/rivet-sector\/assets\//);
-    expect(lab).toContain('href="/rivet-sector/manifest.webmanifest"');
+    expect(html).toContain('2D Action Shooter');
+    expect(html).toMatch(/src="\/rivet-sector\/assets\//);
+    expect(lab).toContain("location.replace('/rivet-sector/'");
+    expect(lab).not.toContain('/src/');
+    expect(JSON.parse(read('package-lock.json').toString()).packages['node_modules/@babylonjs/core']).toBeUndefined();
     for (const path of ['player.png', 'enemy.png', 'floor.png', 'wall.png', 'obstacle.png', 'energy.png', 'impact.png', 'afterimage.png', 'shot.wav', 'hit.wav', 'explosion.wav', 'dodge.wav', 'bgm.wav', 'catalog.json']) {
       expect(read(`.cache/pwa-build/2d/assets/${path}`)).toEqual(read(`public/2d/assets/${path}`));
     }

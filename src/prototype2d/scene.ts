@@ -48,7 +48,10 @@ export class TrainingScene extends Phaser.Scene {
     const p = this.simulation.state.player;
     this.player = this.add.sprite(p.x, p.y, 'player', 4).setDepth(4);
     this.reticle = this.add.graphics().setDepth(6);
-    const camera = this.cameras.main; camera.setZoom(2); camera.setBounds(0, 0, WORLD.width, WORLD.height); camera.startFollow(this.player, true, 1, 1);
+    const camera = this.cameras.main; camera.setZoom(Math.max(1, Math.min(2, this.scale.width / 320))); camera.setBounds(0, 0, WORLD.width, WORLD.height); camera.startFollow(this.player, true, 1, 1);
+    const resizeCamera = () => camera.setZoom(Math.max(1, Math.min(2, this.scale.width / 320)));
+    this.scale.on(Phaser.Scale.Events.RESIZE, resizeCamera);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.scale.off(Phaser.Scale.Events.RESIZE, resizeCamera));
     this.soundLab = createAudio(this.assetBase);
     this.controls = bindInput(this.game.canvas, (x, y) => {
       const rect = this.game.canvas.getBoundingClientRect();
