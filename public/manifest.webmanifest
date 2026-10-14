@@ -7,8 +7,8 @@
   "orientation": "portrait",
   "start_url": "/rivet-sector/",
   "scope": "/rivet-sector/",
-  "background_color": "#101923",
-  "theme_color": "#101923",
+  "background_color": "#020b04",
+  "theme_color": "#020b04",
   "icons": [
     {
       "src": "icons/icon-192.png",

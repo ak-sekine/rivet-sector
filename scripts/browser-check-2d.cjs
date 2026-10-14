@@ -82,12 +82,21 @@ const snapshot = page => page.evaluate(() => window.rivet2d.snapshot());
       assert(b['#move-stick'].x + b['#move-stick'].width <= b['#dodge2d'].x);
       assert(b['#dodge2d'].x + b['#dodge2d'].width <= b['#aim-stick'].x);
       for (const id of ['#move-stick','#dodge2d','#aim-stick']) assert(b[id].y >= b['#controls'].y);
+      assert.equal(b['.hud'].height, 58);
       assert.equal(await mobile.locator('#size-hint').isVisible(),false);
+      assert.equal(await mobile.locator('#game').evaluate(el => getComputedStyle(el, '::after').pointerEvents), 'none');
+      assert.equal(await mobile.locator('canvas').evaluate(el => getComputedStyle(el).imageRendering), 'pixelated');
       const c = await mobile.locator('canvas').boundingBox(); assert.equal(c.width,b['#game'].width); assert.equal(c.height,b['#game'].height);
       assert.equal((await snapshot(mobile)).camera.zoom,width/320);
       await mobile.screenshot({path: `.cache/2d-${width}x${height}.png`});
       console.log(`PASS portrait ${width}x${height}: separated regions, non-overlapping controls, exact canvas size, no scroll`);
     }
+    // Disabling the presentation layer must preserve the canvas and control geometry.
+    const crtBounds = await bounds(mobile, ['#game', '#controls']);
+    await mobile.locator('#lab').evaluate(el => el.dataset.crt = 'off');
+    assert.equal(await mobile.locator('#game').evaluate(el => getComputedStyle(el, '::after').display), 'none');
+    assert.deepEqual(await bounds(mobile, ['#game', '#controls']), crtBounds);
+    await mobile.locator('#lab').evaluate(el => delete el.dataset.crt);
     await mobile.setViewportSize({width:390,height:844}); await mobile.waitForTimeout(200);
     const boxes = await bounds(mobile, ['#move-stick','#aim-stick','#dodge2d']);
     const center = box => ({ x: box.x + box.width / 2, y: box.y + box.height / 2 });

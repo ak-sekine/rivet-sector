@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { PHOSPHOR as P } from './palette';
 import { createGame, facingRow, FIXED_SECONDS } from './logic';
 import { bindInput } from './input';
 import { createAudio } from './audio';
@@ -32,16 +33,16 @@ export class TrainingScene extends Phaser.Scene {
     for (const key of ['player', 'enemy', 'impact', 'afterimage', 'floor', 'wall', 'obstacle', 'energy']) this.textures.get(key).setFilter(Phaser.Textures.FilterMode.NEAREST);
     this.add.tileSprite(WORLD.width / 2, WORLD.height / 2, WORLD.width, WORLD.height, 'floor');
     const paint = this.add.graphics();
-    paint.lineStyle(1, 0x427c7c, .45); paint.strokeRect(352, 192, 576, 448);
-    paint.lineStyle(1, 0x427c7c, .25); paint.strokeCircle(640, 416, 96); paint.strokeCircle(640, 416, 100);
+    paint.lineStyle(1, P.edge, .45); paint.strokeRect(352, 192, 576, 448);
+    paint.lineStyle(1, P.edge, .25); paint.strokeCircle(640, 416, 96); paint.strokeCircle(640, 416, 100);
     for (let y = 208; y < 640; y += 48) { paint.lineBetween(352, y, 360, y); paint.lineBetween(920, y, 928, y); }
-    paint.lineStyle(1, 0xf69e43, .45); paint.strokeCircle(TARGET.x, TARGET.y, 26);
-    this.add.text(640, 176, 'RIVET / SECTOR 07', { fontFamily: 'monospace', fontSize: '12px', color: '#5d999b' }).setOrigin(.5);
-    this.add.text(TARGET.x, TARGET.y - 34, 'TRAINING UNIT', { fontFamily: 'monospace', fontSize: '7px', color: '#cc8e53' }).setOrigin(.5);
-    this.add.text(640, 648, 'LIVE FIRE  •  GENERATED ASSETS', { fontFamily: 'monospace', fontSize: '8px', color: '#4a737d' }).setOrigin(.5);
+    paint.lineStyle(1, P.bright, .45); paint.strokeCircle(TARGET.x, TARGET.y, 26);
+    this.add.text(640, 176, 'RIVET / SECTOR 07', { fontFamily: 'monospace', fontSize: '12px', color: '#2f9f48' }).setOrigin(.5);
+    this.add.text(TARGET.x, TARGET.y - 34, 'TRAINING UNIT', { fontFamily: 'monospace', fontSize: '7px', color: '#79ff91' }).setOrigin(.5);
+    this.add.text(640, 648, 'LIVE FIRE  /  SECTOR 07', { fontFamily: 'monospace', fontSize: '8px', color: '#2f9f48' }).setOrigin(.5);
     for (const rect of walls) this.add.tileSprite(rect.x, rect.y, rect.width, rect.height, 'wall').setOrigin(0).setDepth(1);
     for (const rect of obstacles) {
-      this.add.rectangle(rect.x + 3, rect.y + 5, rect.width, rect.height, 0x050e16, .55).setOrigin(0).setDepth(1);
+      this.add.rectangle(rect.x + 3, rect.y + 5, rect.width, rect.height, P.background, .55).setOrigin(0).setDepth(1);
       this.add.tileSprite(rect.x, rect.y, rect.width, rect.height, 'obstacle').setOrigin(0).setDepth(2);
     }
     this.enemy = this.add.sprite(TARGET.x, TARGET.y, 'enemy').setDepth(3);
@@ -79,7 +80,7 @@ export class TrainingScene extends Phaser.Scene {
     this.player.setPosition(s.player.x, s.player.y).setFrame(row * 4 + (s.moving || s.dodgeRemaining > 0 ? Math.floor(s.time * 10) % 4 : 0));
     this.player.setAlpha(s.dodgeRemaining > 0 ? .8 : 1);
     this.enemy.setFrame(Math.floor(s.time * 2) % 2);
-    if (s.targetFlash > 0) { this.enemy.setTint(0xffedc4); this.enemy.setTintFill(); } else this.enemy.clearTint();
+    if (s.targetFlash > 0) { this.enemy.setTint(P.core); this.enemy.setTintFill(); } else this.enemy.clearTint();
     const liveBullets = new Set(s.bullets.map(b => b.id));
     for (const [id, sprite] of this.bullets) if (!liveBullets.has(id)) { sprite.destroy(); this.bullets.delete(id); }
     for (const b of s.bullets) {
@@ -93,12 +94,12 @@ export class TrainingScene extends Phaser.Scene {
       const sprite = this.effects.get(e.id)!;
       sprite.setFrame(e.kind === 'trail' ? facingRow(e.direction) : Math.min(5, Math.floor((.24 - e.life) / .04)));
       sprite.setAlpha(Math.min(1, e.life / (e.kind === 'trail' ? .18 : .08)));
-      if (e.kind === 'wall') sprite.setTint(0x71d6cf);
+      if (e.kind === 'wall') sprite.setTint(P.bright);
     }
     this.reticle.clear();
     if (Math.hypot(input.aim.x, input.aim.y) > 0) {
       const x = s.player.x + input.aim.x * 48, y = s.player.y + input.aim.y * 48;
-      this.reticle.lineStyle(1, 0x8befe0, .8); this.reticle.strokeCircle(x, y, 4);
+      this.reticle.lineStyle(1, P.bright, .8); this.reticle.strokeCircle(x, y, 4);
       this.reticle.lineBetween(x - 7, y, x - 4, y); this.reticle.lineBetween(x + 4, y, x + 7, y);
       this.reticle.lineBetween(x, y - 7, x, y - 4); this.reticle.lineBetween(x, y + 4, x, y + 7);
     }

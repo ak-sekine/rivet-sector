@@ -9,7 +9,7 @@ describe('PWA assets and production paths', () => {
   it('declares standalone portrait gameplay within the Pages base', () => {
     expect(manifest).toMatchObject({ name: 'Rivet Sector', short_name: 'Rivet Sector',
       start_url: '/rivet-sector/', scope: '/rivet-sector/', display: 'standalone',
-      orientation: 'portrait', background_color: '#101923', theme_color: '#101923' });
+      orientation: 'portrait', background_color: '#020b04', theme_color: '#020b04' });
     for (const icon of manifest.icons) {
       expect(new URL(icon.src, 'https://example.com/rivet-sector/manifest.webmanifest').pathname).toBe(`/rivet-sector/${icon.src}`);
       expect(icon.type).toBe('image/png');

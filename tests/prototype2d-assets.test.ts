@@ -22,6 +22,17 @@ describe('code-generated 2D assets', () => {
       offset += length + 12;
     }
     const pixels = inflateSync(Buffer.concat(chunks)); expect(pixels.length).toBe((width * 4 + 1) * height);
+    // Every visible texel must remain green, including particles and translucent trails.
+    let visible = 0;
+    for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+      const offset = y * (width * 4 + 1) + 1 + x * 4;
+      if (!pixels[offset + 3]) continue;
+      const [red, green, blue] = pixels.subarray(offset, offset + 3);
+      expect(green >= red && green >= blue, `${name} (${x}, ${y})`).toBe(true);
+      if (green) expect(green > red && green > blue).toBe(true);
+      visible++;
+    }
+    expect(visible).toBeGreaterThan(0);
     if (name === 'player.png' || name === 'enemy.png') {
       expect(width * height / (32 * 32)).toBe(frames);
       expect(pixels[4]).toBe(0); // First pixel alpha is transparent.

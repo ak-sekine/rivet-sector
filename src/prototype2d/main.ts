@@ -1,11 +1,13 @@
 import './style.css';
+import './crt.css';
+import { PHOSPHOR } from './palette';
 import Phaser from 'phaser';
 import { TrainingScene } from './scene';
 
 try {
   const region = document.getElementById('game')!;
   const game = new Phaser.Game({
-    type: Phaser.AUTO, parent: 'game', backgroundColor: '#0b171f',
+    type: Phaser.AUTO, parent: 'game', backgroundColor: PHOSPHOR.background,
     pixelArt: true, roundPixels: true, antialias: false,
     scale: { mode: Phaser.Scale.NONE, width: region.clientWidth, height: region.clientHeight },
     input: { activePointers: 3 }, // Three touch pointers plus Phaser's separate mouse pointer.
